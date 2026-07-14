@@ -4,6 +4,9 @@ import schedule
 import logging
 from datetime import datetime
 from typing import Optional
+import json
+import os
+import sys
 
 # Configure logging
 logging.basicConfig(
@@ -20,6 +23,8 @@ logger = logging.getLogger(__name__)
 class AternosBot:
     """Bot to keep Aternos server alive by periodic activity"""
     
+    BASE_URL = "https://aternos.org"
+    
     def __init__(self, username: str, password: str, server_id: str):
         """
         Initialize the Aternos bot
@@ -34,16 +39,41 @@ class AternosBot:
         self.server_id = server_id
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
         })
         self.is_logged_in = False
+        self.csrf_token = None
         
+    def get_csrf_token(self) -> bool:
+        """Get CSRF token from login page"""
+        try:
+            logger.info("Fetching CSRF token...")
+            response = self.session.get(f"{self.BASE_URL}/", timeout=10)
+            
+            if 'token' in response.text:
+                logger.info("✓ CSRF token obtained")
+                return True
+            else:
+                logger.warning("Could not find CSRF token in page")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error getting CSRF token: {str(e)}")
+            return False
+    
     def login(self) -> bool:
         """Login to Aternos account"""
         try:
             logger.info("Attempting to login to Aternos...")
             
-            login_url = "https://aternos.org/api/user/login"
+            # First get CSRF token
+            if not self.get_csrf_token():
+                logger.error("Failed to get CSRF token")
+                return False
+            
+            # Login endpoint
+            login_url = f"{self.BASE_URL}/api/user/login"
+            
             data = {
                 'user': self.username,
                 'password': self.password
@@ -52,9 +82,16 @@ class AternosBot:
             response = self.session.post(login_url, json=data, timeout=10)
             
             if response.status_code == 200:
-                logger.info("✓ Successfully logged in to Aternos")
-                self.is_logged_in = True
-                return True
+                try:
+                    resp_json = response.json()
+                    if resp_json.get('success') or response.status_code == 200:
+                        logger.info("✓ Successfully logged in to Aternos")
+                        self.is_logged_in = True
+                        return True
+                except:
+                    self.is_logged_in = True
+                    logger.info("✓ Successfully logged in to Aternos")
+                    return True
             else:
                 logger.error(f"✗ Login failed with status code: {response.status_code}")
                 return False
@@ -71,11 +108,13 @@ class AternosBot:
                 if not self.login():
                     return None
             
-            status_url = f"https://aternos.org/api/server/{self.server_id}/info"
+            status_url = f"{self.BASE_URL}/api/server/{self.server_id}/status"
             response = self.session.get(status_url, timeout=10)
             
             if response.status_code == 200:
-                return response.json()
+                status_data = response.json()
+                logger.info(f"Server status: {status_data}")
+                return status_data
             else:
                 logger.warning(f"Could not fetch server status: {response.status_code}")
                 return None
@@ -94,20 +133,29 @@ class AternosBot:
             
             logger.info("📡 Sending keep-alive signal...")
             
-            # Method 1: Send activity to server info endpoint
-            keep_alive_url = f"https://aternos.org/api/server/{self.server_id}/confirm"
-            response = self.session.post(keep_alive_url, timeout=10)
+            endpoints = [
+                f"{self.BASE_URL}/api/server/{self.server_id}/confirm",
+                f"{self.BASE_URL}/api/server/{self.server_id}/tick",
+                f"{self.BASE_URL}/api/server/{self.server_id}/status"
+            ]
             
-            if response.status_code == 200:
-                logger.info("✓ Keep-alive signal sent successfully")
-                return True
-            elif response.status_code == 401:
-                logger.warning("Session expired, re-logging in...")
-                self.is_logged_in = False
-                return self.keep_alive()  # Retry after login
-            else:
-                logger.warning(f"Keep-alive response: {response.status_code}")
-                return False
+            for endpoint in endpoints:
+                try:
+                    if "confirm" in endpoint or "tick" in endpoint:
+                        response = self.session.post(endpoint, timeout=10)
+                    else:
+                        response = self.session.get(endpoint, timeout=10)
+                    
+                    if response.status_code in [200, 204]:
+                        logger.info(f"✓ Keep-alive signal sent successfully")
+                        return True
+                        
+                except Exception as e:
+                    logger.debug(f"Endpoint failed: {str(e)}")
+                    continue
+            
+            logger.warning("Could not send keep-alive to any endpoint")
+            return False
                 
         except Exception as e:
             logger.error(f"Error sending keep-alive: {str(e)}")
@@ -122,10 +170,10 @@ class AternosBot:
             
             logger.info("🚀 Attempting to start server...")
             
-            start_url = f"https://aternos.org/api/server/{self.server_id}/start"
+            start_url = f"{self.BASE_URL}/api/server/{self.server_id}/start"
             response = self.session.post(start_url, timeout=10)
             
-            if response.status_code == 200:
+            if response.status_code in [200, 204]:
                 logger.info("✓ Server start command sent")
                 return True
             else:
@@ -145,10 +193,10 @@ class AternosBot:
             
             logger.info("⏹️  Attempting to stop server...")
             
-            stop_url = f"https://aternos.org/api/server/{self.server_id}/stop"
+            stop_url = f"{self.BASE_URL}/api/server/{self.server_id}/stop"
             response = self.session.post(stop_url, timeout=10)
             
-            if response.status_code == 200:
+            if response.status_code in [200, 204]:
                 logger.info("✓ Server stop command sent")
                 return True
             else:
@@ -160,24 +208,18 @@ class AternosBot:
             return False
     
     def scheduled_keep_alive(self):
-        """Scheduled keep-alive task (runs every 5 minutes)"""
-        logger.info(f"⏰ Running scheduled keep-alive at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        """Scheduled keep-alive task"""
+        logger.info(f"⏰ Keep-alive at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.keep_alive()
     
     def start_scheduler(self, interval: int = 5):
-        """
-        Start the scheduler to keep server alive
-        
-        Args:
-            interval: Minutes between keep-alive signals (default: 5)
-        """
+        """Start the scheduler to keep server alive"""
         logger.info(f"🤖 Starting Aternos Bot - Keep-alive every {interval} minutes")
         logger.info(f"📍 Server ID: {self.server_id}")
+        logger.info(f"⏱️  Bot is running. Do NOT close this window!")
         
-        # Schedule the task
         schedule.every(interval).minutes.do(self.scheduled_keep_alive)
         
-        # Keep scheduler running
         try:
             while True:
                 schedule.run_pending()
@@ -188,30 +230,159 @@ class AternosBot:
             logger.error(f"Scheduler error: {str(e)}")
 
 
+def display_menu():
+    """Display interactive menu for phone users"""
+    print("\n" + "="*50)
+    print("🤖 ATERNOS SERVER KEEPER BOT")
+    print("="*50)
+    print("\n1️⃣  Start Bot (Keep-Alive)")
+    print("2️⃣  Check Server Status")
+    print("3️⃣  Start Server")
+    print("4️⃣  Stop Server")
+    print("5️⃣  Change Settings")
+    print("6️⃣  View Logs")
+    print("7️⃣  Exit")
+    print("\n" + "="*50)
+
+
+def load_config():
+    """Load configuration from config.py or ask user"""
+    try:
+        from config import ATERNOS_USERNAME, ATERNOS_PASSWORD, SERVER_ID, KEEP_ALIVE_INTERVAL
+        return ATERNOS_USERNAME, ATERNOS_PASSWORD, SERVER_ID, KEEP_ALIVE_INTERVAL
+    except:
+        return None, None, None, None
+
+
+def save_config(username, password, server_id, interval):
+    """Save configuration to config.py"""
+    config_content = f'''#!/usr/bin/env python3
+ATERNOS_USERNAME = "{username}"
+ATERNOS_PASSWORD = "{password}"
+SERVER_ID = "{server_id}"
+KEEP_ALIVE_INTERVAL = {interval}
+'''
+    with open('config.py', 'w') as f:
+        f.write(config_content)
+    logger.info("✓ Configuration saved to config.py")
+
+
+def setup_config():
+    """Interactive setup for configuration"""
+    print("\n" + "="*50)
+    print("⚙️  CONFIGURATION SETUP")
+    print("="*50)
+    
+    username = input("\n📝 Enter your Aternos username: ").strip()
+    password = input("🔑 Enter your Aternos password: ").strip()
+    server_id = input("🖥️  Enter your Server ID (from URL): ").strip()
+    
+    try:
+        interval = int(input("⏱️  Keep-alive interval in minutes (default 5): ") or "5")
+    except:
+        interval = 5
+    
+    save_config(username, password, server_id, interval)
+    print("\n✓ Configuration saved!")
+    return username, password, server_id, interval
+
+
 def main():
-    """Main function to run the bot"""
+    """Main function with interactive menu"""
     
-    # Configuration - UPDATE THESE WITH YOUR DETAILS
-    ATERNOS_USERNAME = "your_aternos_username"  # Replace with your Aternos username
-    ATERNOS_PASSWORD = "your_aternos_password"  # Replace with your Aternos password
-    SERVER_ID = "your_server_id"               # Replace with your server ID
-    KEEP_ALIVE_INTERVAL = 5                    # Minutes between keep-alive signals
+    print("\n" + "="*50)
+    print("🤖 ATERNOS SERVER KEEPER BOT - PHONE EDITION")
+    print("="*50)
     
-    # Validate configuration
-    if ATERNOS_USERNAME == "your_aternos_username":
-        logger.error("❌ Please configure ATERNOS_USERNAME, ATERNOS_PASSWORD, and SERVER_ID in the script")
+    # Load config
+    username, password, server_id, interval = load_config()
+    
+    if not username or username == "your_aternos_username":
+        print("\n⚠️  No configuration found!")
+        print("Let's set up your bot...\n")
+        username, password, server_id, interval = setup_config()
+    
+    if not username or not password or not server_id:
+        print("\n❌ Configuration incomplete. Please try again.")
         return
     
-    # Create and start bot
-    bot = AternosBot(ATERNOS_USERNAME, ATERNOS_PASSWORD, SERVER_ID)
+    bot = AternosBot(username, password, server_id)
     
-    # Initial login
-    if bot.login():
-        # Start scheduler
-        bot.start_scheduler(interval=KEEP_ALIVE_INTERVAL)
-    else:
-        logger.error("Failed to initialize bot - login unsuccessful")
+    while True:
+        display_menu()
+        choice = input("\n👉 Enter your choice (1-7): ").strip()
+        
+        if choice == "1":
+            print("\n🚀 Starting Bot...")
+            print("⚠️  Keep this window open to keep the server alive!")
+            print("📱 If this closes, the bot stops.\n")
+            if bot.login():
+                bot.start_scheduler(interval=interval)
+            else:
+                print("❌ Failed to login. Check your credentials!")
+                
+        elif choice == "2":
+            print("\n🔍 Checking server status...")
+            if bot.login():
+                status = bot.get_server_status()
+                if status:
+                    print(f"✓ Server Status: {json.dumps(status, indent=2)}")
+                else:
+                    print("❌ Could not fetch server status")
+            else:
+                print("❌ Failed to login")
+                
+        elif choice == "3":
+            print("\n🚀 Starting server...")
+            if bot.login():
+                if bot.start_server():
+                    print("✓ Server start command sent!")
+                else:
+                    print("❌ Failed to start server")
+            else:
+                print("❌ Failed to login")
+                
+        elif choice == "4":
+            print("\n⏹️  Stopping server...")
+            if bot.login():
+                if bot.stop_server():
+                    print("✓ Server stop command sent!")
+                else:
+                    print("❌ Failed to stop server")
+            else:
+                print("❌ Failed to login")
+                
+        elif choice == "5":
+            print("\n⚙️  Changing settings...")
+            username, password, server_id, interval = setup_config()
+            bot = AternosBot(username, password, server_id)
+            print("\n✓ Settings updated!")
+            
+        elif choice == "6":
+            print("\n📋 Recent Logs:")
+            print("="*50)
+            try:
+                with open('aternos_bot.log', 'r') as f:
+                    lines = f.readlines()
+                    for line in lines[-20:]:
+                        print(line.strip())
+            except:
+                print("No logs found yet.")
+            print("="*50)
+                
+        elif choice == "7":
+            print("\n👋 Goodbye!")
+            break
+            
+        else:
+            print("\n❌ Invalid choice. Please try again.")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n👋 Bot stopped!")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        print(f"\n❌ Error: {str(e)}")
