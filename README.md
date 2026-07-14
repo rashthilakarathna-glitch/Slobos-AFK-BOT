@@ -1,15 +1,17 @@
-# 🚀 ATERNOS MINECRAFT 1.20 BOT - ULTRA FAST
+# 🤖 ATERNOS MINECRAFT 1.20 BOT - AUTO-JOIN
 
-**⚡ Keep-Alive Every 1 MINUTE ONLY**
+**⚡ Starts Server + Auto-Joins + Keep-Alive**
 
 **🎮 Server: `1234-Qf37.aternos.me:45024`**
 
-## ⚡ FASTEST MODE
+## 🎮 AUTO-JOIN FEATURE
 
-- 🚀 Auto-starts server
-- ⏳ **Waits only 10 seconds**
-- 📡 Keep-alive **every 1 minute** (FASTEST)
-- ♾️ Server stays ONLINE
+Bot will:
+1. 🚀 Start your server
+2. ⏳ Wait 10 seconds
+3. 🎮 **Auto-join as your player**
+4. 📡 Keep-alive every 1 minute
+5. ♾️ Server stays ONLINE
 
 ## 📱 Quick Start
 
@@ -20,12 +22,18 @@ pip install -r requirements.txt
 python aternos_bot.py
 ```
 
-Answer 3 questions → Bot starts! ✅
+Answer 4 questions:
+- Aternos username
+- Aternos password
+- Server ID
+- **Minecraft username (for auto-join)**
+
+Bot starts → **Auto-joins server!** ✅
 
 ## 🎮 What Happens
 
 ```
-🔐 Login in...
+🔐 Logging in...
 ✅ Login successful!
 
 🚀 Starting server...
@@ -34,7 +42,10 @@ Answer 3 questions → Bot starts! ✅
 ⏳ Waiting 10 seconds...
 
 ✅ SERVER SHOULD BE ONLINE NOW!
-🎮 JOIN: 1234-Qf37.aternos.me:45024
+🎮 SERVER: 1234-Qf37.aternos.me:45024
+
+🤖 Auto-joining server as YourUsername...
+✅ Minecraft should open - join server!
 
 🔄 Sending keep-alive every 1 minute
 📡 Keep-alive #1
@@ -49,28 +60,39 @@ Answer 3 questions → Bot starts! ✅
 - **5 sec** - Login
 - **2 sec** - Start command
 - **10 sec** - Boot wait
-- **~17 sec** - SERVER ONLINE! ✅
-
-## 📍 Server ID
-
-Find at: `aternos.org/server/YOUR_ID/`
+- **0-5 sec** - Auto-join server
+- **~22 sec** - YOU'RE IN! ✅
 
 ## 🔧 Config
 
-Edit `config.py` later
+Edit `config.py`:
 
 ```python
 ATERNOS_USERNAME = "your_username"
 ATERNOS_PASSWORD = "your_password"
 SERVER_ID = "your_server_id"
-KEEP_ALIVE_INTERVAL = 1  # 1 MINUTE ONLY
+KEEP_ALIVE_INTERVAL = 1
+MINECRAFT_USERNAME = "YourMinecraftName"
 ```
+
+## 📍 Server ID
+
+Find at: `aternos.org/server/YOUR_ID/`
 
 ## 📋 Logs
 
 ```bash
 cat aternos_bot.log
 ```
+
+## ✅ Features
+
+- ✅ Auto-start server
+- ✅ **Auto-join server** (new!)
+- ✅ Keep-alive every 1 minute
+- ✅ Phone-friendly (Termux)
+- ✅ Real-time logs
+- ✅ Auto-reconnect
 
 ## ⚠️ Important
 
@@ -79,10 +101,12 @@ cat aternos_bot.log
 - Use WiFi
 - Plug in charger
 
-## 🎯 Server
+## 🎯 Result
 
-🎮 **`1234-Qf37.aternos.me:45024`**
+Server **NEVER goes offline!** 🎮✅
+
+Bot keeps it alive 24/7 with player auto-join!
 
 ---
 
-**FASTEST KEEP-ALIVE BOT!** ⚡📱✅
+**ULTIMATE ATERNOS BOT!** 🚀📱✅
