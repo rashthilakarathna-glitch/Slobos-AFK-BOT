@@ -1,48 +1,88 @@
-# 🤖 Aternos 24/7 Hosting Bot
+# 🚀 ATERNOS MINECRAFT 1.20 BOT - ULTRA FAST
 
-A Minecraft bot that helps keep an Aternos server online 24/7 by automatically joining it using a Mineflayer-based bot. Perfect for SMPs or small multiplayer servers that shut down when no players are online.
+**⚡ Keep-Alive Every 1 MINUTE ONLY**
+
+**🎮 Server: `1234-Qf37.aternos.me:45024`**
+
+## ⚡ FASTEST MODE
+
+- 🚀 Auto-starts server
+- ⏳ **Waits only 10 seconds**
+- 📡 Keep-alive **every 1 minute** (FASTEST)
+- ♾️ Server stays ONLINE
+
+## 📱 Quick Start
+
+```bash
+git clone https://github.com/rashthilakarathna-glitch/Slobos-AFK-BOT
+cd Slobos-AFK-BOT
+pip install -r requirements.txt
+python aternos_bot.py
+```
+
+Answer 3 questions → Bot starts! ✅
+
+## 🎮 What Happens
+
+```
+🔐 Login in...
+✅ Login successful!
+
+🚀 Starting server...
+✅ Server starting!
+
+⏳ Waiting 10 seconds...
+
+✅ SERVER SHOULD BE ONLINE NOW!
+🎮 JOIN: 1234-Qf37.aternos.me:45024
+
+🔄 Sending keep-alive every 1 minute
+📡 Keep-alive #1
+✅ Keep-alive #1
+📡 Keep-alive #2
+✅ Keep-alive #2
+...
+```
+
+## ⏱️ Timeline
+
+- **5 sec** - Login
+- **2 sec** - Start command
+- **10 sec** - Boot wait
+- **~17 sec** - SERVER ONLINE! ✅
+
+## 📍 Server ID
+
+Find at: `aternos.org/server/YOUR_ID/`
+
+## 🔧 Config
+
+Edit `config.py` later
+
+```python
+ATERNOS_USERNAME = "your_username"
+ATERNOS_PASSWORD = "your_password"
+SERVER_ID = "your_server_id"
+KEEP_ALIVE_INTERVAL = 1  # 1 MINUTE ONLY
+```
+
+## 📋 Logs
+
+```bash
+cat aternos_bot.log
+```
+
+## ⚠️ Important
+
+- Keep Termux open
+- Keep screen on
+- Use WiFi
+- Plug in charger
+
+## 🎯 Server
+
+🎮 **`1234-Qf37.aternos.me:45024`**
 
 ---
 
-## ✨ Features
-*   ✅ **Auto-Connect**: Automatically joins your server.
-*   ✅ **Infinite Uptime**: Prevents AFK kicks and server shutdowns.
-*   ✅ **Smart Reconnect**: Automatically reconnects if the internet drops or server restarts.
-*   ✅ **Render-Ready**: Includes "Self-Ping" to run 24/7 for FREE on Render.com.
-*   ✅ **Plugin Support**: Compatible with Paper/Spigot/Bukkit (auto-auth included).
-
----
-
-## 🛠️ Requirements
-*   **GitHub Account**
-*   **Aternos Server**
-*   **Render Account** (for 24/7 hosting)
-*   **Common Sense!** 🧠        
-
----
-
-## 🚀 Setup Guide
-
-We have made setup super easy! Check out the guide below:
-
-[**Detailed Google Doc Guide**](https://docs.google.com/document/d/1Fl0dRzP6O30ehp5-QcaB11IobF8I1JJhKUipzCWiCYA/edit?tab=t.0).
-
----
-
-## ⚙️ Usage
-*   **Start**: Just turn on your Aternos server. The bot will join automatically.
-*   **Status**: Visit the Render URL to see a status dashboard.
-*   **Chat**: The bot logs chat to the console.
-
----
-
-## ⚠️ Disclaimer
-This project is not affiliated with Aternos, Mojang, or Microsoft. Use at your own risk. Misuse may violate platform terms of service. This bot does not bypass Aternos queue limits; it only keeps the server active once it is online.
-
----
-
-## ❤️ Credits
-*   **Slobos (Discord: sloboscc)** — Original creator & idea. (The GOAT 🐐)
-*   **Mr.Juice (Discord: Mr.Juice3046)** — Updates, Guide, & Maintenance.
-
-**License**: MIT License
+**FASTEST KEEP-ALIVE BOT!** ⚡📱✅
